@@ -4,15 +4,6 @@ var configBelowOdd = 1.3; 	// Под кой коефициент да се ак�
 var configBetAmount = 1;	// Сумата която да залага
 var refreshRateInSeconds = 1; // На колко време да се изпълнява скрипта (секунди)
 
-function removeHighlight(element){
-	const highLightClass = "gll-ParticipantCentered_Highlighted";
-	if (element.classList.contains(highLightClass))
-	{
-		element.click();
-		element.classList.remove(highLightClass);		
-	}
-}
-
 function checkOddsAndBet(element, index)
 {
 	let odd = null;	
@@ -42,11 +33,17 @@ function checkOddsAndBet(element, index)
 	}
 	
 	// Преминаваме към залога, защото стойността на коефициента е под или равна на зададения от потребителя.
-	removeHighlight(element);
 	element.click();
 	
 	let iframeBedModule = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
 	
+	let removeAllButtons = iframeBedModule.getElementsByClassName("bs-Header_RemoveAllLink");
+
+	if (removeAllButtons.length)
+	{
+		removeAllButtons[0].click();
+	}
+
 	let stakeElements = iframeBedModule.getElementsByClassName("bs-Stake_TextBox");
 	if (stakeElements.length == 0 || typeof stakeElements[0] == "undefined")
 	{
