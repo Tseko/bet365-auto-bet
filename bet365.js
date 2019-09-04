@@ -32,9 +32,6 @@ function checkOddsAndBet(element, index)
 		return;
 	}
 	
-	// Преминаваме към залога, защото стойността на коефициента е под или равна на зададения от потребителя.
-	element.click();
-	
 	let iframeBedModule = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
 	
 	let removeAllButtons = iframeBedModule.getElementsByClassName("bs-Header_RemoveAllLink");
@@ -43,7 +40,10 @@ function checkOddsAndBet(element, index)
 	{
 		removeAllButtons[0].click();
 	}
-
+	
+	// Преминаваме към залога, защото стойността на коефициента е под или равна на зададения от потребителя.
+	element.click();
+	
 	let stakeElements = iframeBedModule.getElementsByClassName("bs-Stake_TextBox");
 	if (stakeElements.length == 0 || typeof stakeElements[0] == "undefined")
 	{
