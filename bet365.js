@@ -1,7 +1,7 @@
 var shouldPlaceBet = false; // true ако искаш скрипта, да почне да натиска бутона 'Заложи'. Това е цел ТЕСТ, че слага правилите мачове в правилното каре с правилния залог.
-var configAfterMinute = 72; // От коя минута да почне да следи коефициентите
+var configAfterMinute = 59; // От коя минута да почне да следи коефициентите
 var configBelowOdd = 1.3; 	// Под кой коефициент да се активизира
-var configBetAmount = 1;	// Сумата която да залага
+var configBetAmount = 0.01;	// Сумата която да залага
 var refreshRateInSeconds = 1; // На колко време да се изпълнява скрипта (секунди)
 
 function checkOddsAndBet(element, index)
@@ -15,10 +15,12 @@ function checkOddsAndBet(element, index)
 			console.log(`Ред ${index+1}: Не можем да прихванем елемента съдържащ коефициента.`);
 			return;
 		}
-		let oddElementValue = oddElement.value;
+    console.log(oddElement);
+		let oddElementValue = oddElement.innerHTML;
 		try
 		{
-			odd = parseInt(oddElementValue);
+			odd = parseFloat(oddElementValue);
+	    console.log("Прихванат коефициент: " + odd);
 		}
 		catch(error)
 		{
@@ -26,12 +28,12 @@ function checkOddsAndBet(element, index)
 			return;
 		}
 	}
-	
-	if (odd == null || odd > configBelowOdd)
+
+	if (odd == null || odd > configBelowOdd || isNaN(odd))
 	{
 		return;
 	}
-	
+
 	let iframeBedModule = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
 	
 	let removeAllButtons = iframeBedModule.getElementsByClassName("bs-Header_RemoveAllLink");
