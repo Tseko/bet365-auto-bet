@@ -1,8 +1,8 @@
 var shouldPlaceBet = false;   // true ако искаш скрипта, да почне да натиска бутона 'Заложи'. Това е цел ТЕСТ, че слага правилите мачове в правилното каре с правилния залог.
-var configAfterMinute = 30;   // От коя минута да почне да следи коефициентите
-var configBelowOdd = 1.1; 	  // Под кой коефициент да се активизира
+var configAfterMinute = 80;   // От коя минута да почне да следи коефициентите
+var configAboveOdd = 0;       // Ако искаш коефицинта да е интервал това е долната граница.
+var configBelowOdd = 1.2; 	  // Под кой коефициент да се активизира. Горна граница за коефициента.
 var configBetAmount = 0.25;	  // Сумата която да залага
-//var refreshRateInSeconds = 5; // На колко време да се изпълнява скрипта (секунди)
 
 
 function clearAllSelections(callback) {
@@ -14,7 +14,10 @@ function clearAllSelections(callback) {
     removeAllButtons[0].click();
     console.log("Изчистване на селекциите.");
   }
-  callback();
+
+  if (typeof callback == "function") {
+    callback();
+  }
 }
 
 function getOddFromElement(element, index) {
@@ -46,10 +49,12 @@ function getOddFromElement(element, index) {
 function checkOddsAndMakeSelection(element, index) {
   let odd = getOddFromElement(element, index);
 
-  if (odd != null && odd < configBelowOdd && !element.classList.contains("gll-ParticipantCentered_Highlighted")) {
+  if (odd != null && configAboveOdd > odd && odd < configBelowOdd && !element.classList.contains("gll-ParticipantCentered_Highlighted")) {
     console.log(`Ред ${index + 1}: Прихванат коефициент: ${odd}`);
     // Клик върху коефициента.
     element.click();
+  } else {
+    console.log(`Ред ${index + 1}: Зададен коефициент: Между ${configAboveOdd} и ${configBelowOdd}. Прихванат коефициент: ${odd}. Не правим селекция.`);
   }
 }
 
@@ -83,8 +88,8 @@ function makeSelections(callback) {
 
       // Залогаме на всеки един от коефициентите ако е със стойност под зададената от потребителя.
       checkOddsAndMakeSelection(firstTeamOddElement, index);
-      //checkOddsAndBet(secondTeamOddElement, index);
-      //checkOddsAndBet(evenOddElement, index);
+      checkOddsAndMakeSelection(secondTeamOddElement, index);
+      checkOddsAndMakeSelection(evenOddElement, index);
     }
     else {
       console.log(`Ред ${index + 1}: Изчакваме, защото сме в ${time} минута. Ще се активизираме на ${configAfterMinute} минута.`);
@@ -99,10 +104,18 @@ function makeSelections(callback) {
 function placeBetForAllSelections() {
   let iframeElement = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
   let stakeElements = iframeElement.getElementsByClassName("bs-Stake_TextBox");
+  let selectionDescriptions = iframeElement.getElementsByClassName("bs-Selection");
   if (stakeElements.length) {
     for (let index = 0; index < stakeElements.length; index++) {
       const stakeElement = stakeElements[index];
-      stakeElement.setAttribute("value", configBetAmount);
+      let uniqueName = generateUniqueName(selectionDescriptions[index]);
+      if (alreadyAddedSelection(uniqueName)) {
+        console.log(`Вече имаме активен залог за ${uniqueName}, така че не поставяме сума.`);
+        stakeElement.setAttribute("value", "");
+      } else {
+        stakeElement.setAttribute("value", configBetAmount);
+        addSelectionDescription(uniqueName);
+      }
     }
 
     // Стойността на залога би трябвало да е в кутийката. Продължаваме към клик на бутона "Заложи"
@@ -121,12 +134,57 @@ function placeBetForAllSelections() {
       betButtonElements[0].click();
       console.log("Клик върху бутона 'Заложи'");
     } else {
-      console.log("Не открихме бутон за 'Заложи'");
+      throw (" Не открихме бутон за 'Заложи'");
     }
   }
   else {
-    console.log("Не успяхме да открием полета за въвеждане на сума за залог.");
+    console.log("Няма открити селекции.");
   }
+}
+
+function generateUniqueName(selectionDescriptions) {
+  let name = "";
+  let childDivs = selectionDescriptions.children;
+  if (childDivs.length == 3) {
+    name += childDivs[0].innerText.trim();
+    name += childDivs[1].innerText.trim();
+    name += childDivs[2].innerText.trim();
+  }
+
+  if (name == "") {
+    throw "Не успяхме да генерираме уникално име за селекцията.";
+  }
+
+  return name;
+}
+
+function clearProcessData() {
+  localStorage.madeSelections = undefined;
+  console.log("Историята на залозите е изтрита. Може да стартирате отново процеса чрез startProcess()");
+}
+
+function alreadyAddedSelection(uniqueName) {
+  let madeSelections = localStorage.madeSelections;
+  if (typeof madeSelections == "undefined" || madeSelections == "undefined") {
+    return false;
+  }
+
+  let deserializedMadeSelections = JSON.parse(localStorage.madeSelections);
+  return deserializedMadeSelections.includes(uniqueName);
+}
+
+function addSelectionDescription(uniqueName) {
+  let madeSelections = localStorage.madeSelections;
+  let madeSelectionsArray = [];
+
+  if (typeof madeSelections != "undefined" && madeSelections != "undefined") {
+    madeSelectionsArray = JSON.parse(localStorage.madeSelections);
+  }
+
+  if (!madeSelectionsArray.includes(uniqueName)) {
+    madeSelectionsArray.push(uniqueName);
+  }
+  localStorage.madeSelections = JSON.stringify(madeSelectionsArray);
 }
 
 function startProcess() {
@@ -138,5 +196,27 @@ function startProcess() {
         }, 1000);
       });
     }, 1000);
+  });
+}
+
+var processInterval = [];
+/** * Accepts seconds as parameter */
+function repeatProcess(seconds) {
+  if (typeof seconds == "undefined" || seconds == 0) {
+    throw "Моля въведете валидна стойност за секундите на които искате скрипта да се повтаря.";
+  }
+
+  if (seconds < 10) {
+    throw "Минимумът за интервал на повторение е 10 секунди.";
+  }
+
+  processInterval.push(setInterval(function () {
+    startProcess();
+  }, seconds * 1000));
+}
+
+function stopRepeating() {
+  processInterval.forEach(processId => {
+    clearInterval(processId);
   });
 }
