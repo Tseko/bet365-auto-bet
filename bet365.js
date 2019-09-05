@@ -1,8 +1,8 @@
 var shouldPlaceBet = false; // true ако искаш скрипта, да почне да натиска бутона 'Заложи'. Това е цел ТЕСТ, че слага правилите мачове в правилното каре с правилния залог.
-var configAfterMinute = 59; // От коя минута да почне да следи коефициентите
-var configBelowOdd = 1.3; 	// Под кой коефициент да се активизира
-var configBetAmount = 0.01;	// Сумата която да залага
-var refreshRateInSeconds = 1; // На колко време да се изпълнява скрипта (секунди)
+var configAfterMinute = 30; // От коя минута да почне да следи коефициентите
+var configBelowOdd = 1.1; 	// Под кой коефициент да се активизира
+var configBetAmount = 0.25;	// Сумата която да залага
+var refreshRateInSeconds = 5; // На колко време да се изпълнява скрипта (секунди)
 
 function checkOddsAndBet(element, index)
 {
@@ -15,12 +15,11 @@ function checkOddsAndBet(element, index)
 			console.log(`Ред ${index+1}: Не можем да прихванем елемента съдържащ коефициента.`);
 			return;
 		}
-    console.log(oddElement);
+    
 		let oddElementValue = oddElement.innerHTML;
 		try
 		{
 			odd = parseFloat(oddElementValue);
-	    console.log("Прихванат коефициент: " + odd);
 		}
 		catch(error)
 		{
@@ -34,89 +33,91 @@ function checkOddsAndBet(element, index)
 		return;
 	}
 
-	let iframeBedModule = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
-	
-	let removeAllButtons = iframeBedModule.getElementsByClassName("bs-Header_RemoveAllLink");
+	console.log(`Ред ${index+1}: Прихванат коефициент: ${odd}`);
 
-	if (removeAllButtons.length)
-	{
-		removeAllButtons[0].click();
-	}
-	
-	// Преминаваме към залога, защото стойността на коефициента е под или равна на зададения от потребителя.
-	element.click();
-	
-	let stakeElements = iframeBedModule.getElementsByClassName("bs-Stake_TextBox");
-	if (stakeElements.length == 0 || typeof stakeElements[0] == "undefined")
-	{
-		console.log(`Ред ${index+1}: Не успяхме да открием полето за въвеждане на сума за залог.`);
-		return;
-	}
-	
-	let firstStakeElement = stakeElements[0];
-	
-	let potentialChangeAcceptanceElement = iframeBedModule.getElementsByClassName("acceptChanges bs-BtnWrapper");
-	
-	if (potentialChangeAcceptanceElement.length == 1 && !potentialChangeAcceptanceElement[0].classList.contains("hidden"))
-	{
-		potentialChangeAcceptanceElement[0].click();
-	}
-	
-	let betButtonElements = iframeBedModule.getElementsByClassName("placeBet bs-BtnWrapper");
-	
-	if (betButtonElements.length == 1 && !betButtonElements[0].classList.contains("hidden") && shouldPlaceBet)
-	{
-		firstStakeElement.value = configBetAmount;
-		betButtonElements[0].click();
-	}	
-}
-
-function processRow(rowElement, index)
+if(!element.classList.contains("gll-ParticipantCentered_Highlighted"))
 {
-	var firstColumnDivs = rowElement.querySelector(".ipo-MainMarkets").getElementsByClassName("ipo-MainMarketRenderer")[0].childNodes;
-	var firstTeamOddElement = firstColumnDivs[0];
-	var secondTeamOddElement = firstColumnDivs[1];
-	var evenOddElement = firstColumnDivs[2];
-	
-	if (firstTeamOddElement.childNodes.length == 0 &&
-		secondTeamOddElement.childNodes.length == 0 &&
-		evenOddElement.childNodes.length == 0)
-		{
-			console.log(`Ред ${index+1}: Изчакваме, защото няма коефициенти в първата колона.`);
-			return;
-		}
-		
-	// Залогаме на всеки един от коефициентите ако е със стойност под зададената от потребителя.
-	checkOddsAndBet(firstTeamOddElement, index);
-	checkOddsAndBet(secondTeamOddElement, index);
-	checkOddsAndBet(evenOddElement, index);
+	// Клик върху коефициента
+	element.click();
 }
 
-setInterval(function(){
+	var checkExist = setInterval(function() {
+    
+    let stakeElements = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument.getElementsByClassName("bs-Stake_TextBox");
+  	if (stakeElements.length >= 0 && !stakeElements[0].classList.contains("hidden"))
+  	{
+  		stakeElements[0].setAttribute("value", configBetAmount);
+      console.log(stakeElements[0]);
+
+      // Стойността на залога би трябвало да е в кутийката. Продължаваме към клик на бутона "Заложи"
+    	let potentialChangeAcceptanceElement = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument.getElementsByClassName("acceptChanges bs-BtnWrapper");
+    	
+    	if (potentialChangeAcceptanceElement.length == 1 && !potentialChangeAcceptanceElement[0].classList.contains("hidden"))
+    	{
+    		potentialChangeAcceptanceElement[0].click();
+    	}
+    	
+    	let betButtonElements = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument.getElementsByClassName("bs-Btn bs-BtnHover");
+    	
+    	if (betButtonElements.length == 1 && !betButtonElements[0].classList.contains("hidden") && shouldPlaceBet)
+    	{
+    		document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument.getElementsByClassName("bs-Btn bs-BtnHover")[0].click();
+    	}	
+
+      clearInterval(checkExist);
+  	}
+  	else
+    {
+  		console.log(`Ред ${index+1}: Не успяхме да открием полето за въвеждане на сума за залог.`);
+    }
+}, 500);
+
+  
+}
+
+function startProcess(){
+//setInterval(function(){
 	var rows = document.getElementsByClassName("ipo-Fixture_TableRow");
 	for (var index = 0; index < rows.length; index++)
 	{
-		let currentRow = rows[index];
-		
-		let time = null;
-		try
-		{
-			time = parseInt(currentRow.childNodes[0].childNodes[0].childNodes[0].textContent.split(":")[0]);
-		
-		}
-		catch(error)
-		{
-			console.log("Възникна грешка при установяването на изминалото време. " + error);
-			return;
-		}
-		
-		if (time != null && time >= configAfterMinute)
-		{
-			processRow(currentRow, index);
-		}
-		else
-		{
-			console.log(`Ред ${index+1}: Изчакваме, защото сме в ${time} минута. Ще се активизираме на ${configAfterMinute} минута.`);
-		}
+  		let currentRow = rows[index];
+			console.log(`Ред ${index+1} се обработва.`);
+  		
+  		let time = null;
+  		try
+  		{
+  			time = parseInt(currentRow.childNodes[0].childNodes[0].childNodes[0].textContent.split(":")[0]);
+  		}
+  		catch(error)
+  		{
+  			console.log("Възникна грешка при установяването на изминалото време. " + error);
+  			continue;
+  		}
+  		
+      var firstColumnDivs = currentRow.querySelector(".ipo-MainMarkets").getElementsByClassName("ipo-MainMarketRenderer")[0].childNodes;
+    	var firstTeamOddElement = firstColumnDivs[0];
+    	var secondTeamOddElement = firstColumnDivs[1];
+    	var evenOddElement = firstColumnDivs[2];
+      	
+  		if (time != null && time >= configAfterMinute)
+  		{
+      	if (firstTeamOddElement.childNodes.length == 0 &&
+      		secondTeamOddElement.childNodes.length == 0 &&
+      		evenOddElement.childNodes.length == 0)
+      		{
+      			console.log(`Ред ${index+1}: Изчакваме, защото няма коефициенти в първата колона.`);
+      			continue;
+      		}
+      		
+        	// Залогаме на всеки един от коефициентите ако е със стойност под зададената от потребителя.
+        	checkOddsAndBet(firstTeamOddElement, index);
+        	//checkOddsAndBet(secondTeamOddElement, index);
+        	//checkOddsAndBet(evenOddElement, index);
+  		}
+  		else
+  		{
+  			console.log(`Ред ${index+1}: Изчакваме, защото сме в ${time} минута. Ще се активизираме на ${configAfterMinute} минута.`);
+  		}
 	}
-}, refreshRateInSeconds * 1000);
+}
+//}, refreshRateInSeconds * 1000);
