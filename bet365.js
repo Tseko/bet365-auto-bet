@@ -49,7 +49,7 @@ function getOddFromElement(element, index) {
 function checkOddsAndMakeSelection(element, index) {
   let odd = getOddFromElement(element, index);
 
-  if (odd != null && configAboveOdd > odd && odd < configBelowOdd && !element.classList.contains("gll-ParticipantCentered_Highlighted")) {
+  if (odd != null && configAboveOdd < odd && odd < configBelowOdd && !element.classList.contains("gll-ParticipantCentered_Highlighted")) {
     console.log(`Ред ${index + 1}: Прихванат коефициент: ${odd}`);
     // Клик върху коефициента.
     element.click();
