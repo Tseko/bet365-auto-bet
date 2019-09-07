@@ -101,7 +101,30 @@ function makeSelections(callback) {
   }
 }
 
-function placeBetForAllSelections() {
+function makeBetForAllSelections() {
+  let iframeElement = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
+
+  // Стойността на залога би трябвало да е в кутийката. Продължаваме към клик на бутона "Заложи"
+  let potentialChangeAcceptanceElement = iframeElement.getElementsByClassName("acceptChanges bs-BtnWrapper");
+
+  if (potentialChangeAcceptanceElement.length == 1 && !potentialChangeAcceptanceElement[0].classList.contains("hidden")) {
+    potentialChangeAcceptanceElement[0].click();
+    console.log("Клик върху бутона 'Приемане на промените'");
+  } else {
+    console.log("Не открихме бутон за 'Приемане на промените'");
+  }
+
+  let betButtonElements = iframeElement.getElementsByClassName("bs-Btn bs-BtnHover");
+
+  if (betButtonElements.length == 1 && !betButtonElements[0].classList.contains("hidden") && shouldPlaceBet) {
+    //betButtonElements[0].click();
+    console.log("Клик върху бутона 'Заложи'");
+  } else {
+    console.log("Не открихме бутон за 'Заложи'");
+  }
+}
+
+function placeBetForAllSelections(callback) {
   let iframeElement = document.getElementsByClassName("bw-BetslipWebModule_Frame")[0].contentDocument;
   let stakeElements = iframeElement.getElementsByClassName("bs-Stake_TextBox");
   let selectionDescriptions = iframeElement.getElementsByClassName("bs-Selection");
@@ -110,31 +133,26 @@ function placeBetForAllSelections() {
       const stakeElement = stakeElements[index];
       let uniqueName = generateUniqueName(selectionDescriptions[index]);
       if (alreadyAddedSelection(uniqueName)) {
-        console.log(`Вече имаме активен залог за ${uniqueName}, така че не поставяме сума.`);
+        console.log(`Вече имаме активен залог за "${uniqueName}", така че го пропускаме.`);
         stakeElement.setAttribute("value", "");
+        let removeButtons = stakeElement
+          .parentNode
+          .parentNode
+          .parentNode
+          .parentNode
+          .children[0].getElementsByClassName("bs-RemoveColumn_Button remove");
+
+        if (removeButtons.length) {
+          removeButtons[0].click();
+        }
+
+        if (typeof callback == "function") {
+          callback();
+        }
       } else {
         stakeElement.setAttribute("value", configBetAmount);
         addSelectionDescription(uniqueName);
       }
-    }
-
-    // Стойността на залога би трябвало да е в кутийката. Продължаваме към клик на бутона "Заложи"
-    let potentialChangeAcceptanceElement = iframeElement.getElementsByClassName("acceptChanges bs-BtnWrapper");
-
-    if (potentialChangeAcceptanceElement.length == 1 && !potentialChangeAcceptanceElement[0].classList.contains("hidden")) {
-      potentialChangeAcceptanceElement[0].click();
-      console.log("Клик върху бутона 'Приемане на промените'");
-    } else {
-      console.log("Не открихме бутон за 'Приемане на промените'");
-    }
-
-    let betButtonElements = iframeElement.getElementsByClassName("bs-Btn bs-BtnHover");
-
-    if (betButtonElements.length == 1 && !betButtonElements[0].classList.contains("hidden") && shouldPlaceBet) {
-      betButtonElements[0].click();
-      console.log("Клик върху бутона 'Заложи'");
-    } else {
-      throw (" Не открихме бутон за 'Заложи'");
     }
   }
   else {
@@ -192,7 +210,9 @@ function startProcess() {
     setTimeout(function () { // Wait 1s
       makeSelections(function () {
         setTimeout(function () { // Wait 1s
-          placeBetForAllSelections();
+          placeBetForAllSelections(function () { // Wait 1s
+            makeBetForAllSelections();
+          }, 1000);
         }, 1000);
       });
     }, 1000);
