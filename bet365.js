@@ -145,10 +145,6 @@ function placeBetForAllSelections(callback) {
         if (removeButtons.length) {
           removeButtons[0].click();
         }
-
-        if (typeof callback == "function") {
-          callback();
-        }
       } else {
         stakeElement.setAttribute("value", configBetAmount);
         addSelectionDescription(uniqueName);
@@ -157,6 +153,10 @@ function placeBetForAllSelections(callback) {
   }
   else {
     console.log("Няма открити селекции.");
+  }
+
+  if (typeof callback == "function") {
+    callback();
   }
 }
 
@@ -210,9 +210,11 @@ function startProcess() {
     setTimeout(function () { // Wait 1s
       makeSelections(function () {
         setTimeout(function () { // Wait 1s
-          placeBetForAllSelections(function () { // Wait 1s
-            makeBetForAllSelections();
-          }, 1000);
+          placeBetForAllSelections(function () {
+            setTimeout(function () { // Wait 1s
+              makeBetForAllSelections();
+            }, 1000);
+          });
         }, 1000);
       });
     }, 1000);
