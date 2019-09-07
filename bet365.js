@@ -117,7 +117,7 @@ function makeBetForAllSelections() {
   let betButtonElements = iframeElement.getElementsByClassName("bs-Btn bs-BtnHover");
 
   if (betButtonElements.length == 1 && !betButtonElements[0].classList.contains("hidden") && shouldPlaceBet) {
-    //betButtonElements[0].click();
+    betButtonElements[0].click();
     console.log("Клик върху бутона 'Заложи'");
   } else {
     console.log("Не открихме бутон за 'Заложи'");
