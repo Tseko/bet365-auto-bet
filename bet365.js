@@ -147,7 +147,10 @@ function placeBetForAllSelections(callback) {
         }
       } else {
         stakeElement.setAttribute("value", configBetAmount);
-        addSelectionDescription(uniqueName);
+        if(shouldPlaceBet)
+        {
+          addSelectionDescription(uniqueName);
+        }
       }
     }
   }
